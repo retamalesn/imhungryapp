@@ -1,5 +1,7 @@
 package com.imhungryapp.demo.service;
 
+import javax.mail.AuthenticationFailedException;
+
 import org.apache.commons.lang3.StringUtils;
 import org.joda.time.ReadableInstant;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,6 +50,7 @@ public class DistanceMatrixService {
 		request = request
 	            .origins(origins)
 	            .destinations(destinations);
+
 		
 	    if (travelMode != null ) {
 	    	request = request.mode(travelMode);
@@ -79,8 +82,7 @@ public class DistanceMatrixService {
 	    	request =  request.trafficModel(trafficModel);
 	    }
 	    
-	           
-	            
+	          
 		DistanceMatrix matrix = request.await();
 	    return matrix;
 	}

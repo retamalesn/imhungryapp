@@ -21,6 +21,7 @@ import com.google.maps.model.DistanceMatrix;
 import com.google.maps.model.TrafficModel;
 import com.google.maps.model.TravelMode;
 import com.imhungryapp.demo.config.GeneralProperties;
+import com.imhungryapp.demo.dto.ResponseOrder;
 import com.imhungryapp.demo.exception.ResourceNotFoundException;
 import com.imhungryapp.demo.model.DeliveryTime;
 import com.imhungryapp.demo.model.DistanceMatrixItem;
@@ -60,19 +61,20 @@ public class PurchaseOrderController {
 
 	@RequestMapping(value = "/add", method = RequestMethod.POST)
 	@ResponseBody
-	public DeliveryTime createOrder(@Valid @RequestBody PurchaseOrder order) {
-		DeliveryTime deliveryTime = new DeliveryTime();
+	public ResponseOrder createOrder(@Valid @RequestBody PurchaseOrder order) {
 		PurchaseOrder orderSaved = orderRep.save(order);
+		ResponseOrder respOrder = new ResponseOrder(new DeliveryTime());
 		restRep.findById(order.getRestaurantId()).map(restaurant -> {
+			
 			restaurant.getPurchaseOrders().add(orderSaved);
 			Restaurant restSaved = restRep.save(restaurant);
-			deliveryTime.setTime(calculateTime(restSaved, orderSaved));
-			sendEmail(deliveryTime);
-			sendSms(deliveryTime);
-			return deliveryTime;
+			calculateTime(restSaved, orderSaved, respOrder);
+			sendEmail(respOrder);
+			sendSms(respOrder);
+			return respOrder;
 		}).orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id " + order.getRestaurantId()));
 
-		return deliveryTime;
+		return respOrder;
 	}
 
 	@DeleteMapping("/delete/{id}")
@@ -83,7 +85,7 @@ public class PurchaseOrderController {
 		}).orElseThrow(() -> new ResourceNotFoundException("Order not found with id " + id));
 	}
 
-	private String calculateTime(Restaurant res, PurchaseOrder order) {
+	private ResponseOrder calculateTime(Restaurant res, PurchaseOrder order, ResponseOrder respOrder) {
 		String result = "";
 		String[] origins = new String[] { res.getLocation() };
 		String[] destinations = new String[] { order.getLatLng() };
@@ -93,28 +95,34 @@ public class PurchaseOrderController {
 					TrafficModel.PESSIMISTIC);
 			DistanceMatrixResponse response = new DistanceMatrixResponse(distanceMatrix);
 			for (DistanceMatrixItem di : response.getDistanceMatrixItems()) {
-				result = di.getDistanceMatrixElement().getDurationInTraffic().getHumanReadable();
+				respOrder.getDeliveryTime().setTime(di.getDistanceMatrixElement().getDurationInTraffic().getHumanReadable());
 			}
-
+			respOrder.getDeliveryTime().setStatus("Delivery time calculated");
 		} catch (IOException e) {
-			result = "Time couldn't calculated!";
-			e.printStackTrace();
+			respOrder.getDeliveryTime().setStatus("Wrong API KEY");
+			respOrder.getDeliveryTime().setTime("Time couldn't calculated!");
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			respOrder.getDeliveryTime().setStatus("Wrong API KEY");
+			respOrder.getDeliveryTime().setTime("Time couldn't calculated!");
 		}
-		return result;
+		return respOrder;
 	}
 
-	private void sendEmail(DeliveryTime dt) {
+	private ResponseOrder sendEmail(ResponseOrder respOrder) {
 
-		app.getEmail().setContent(app.getEmail().getContent()+dt.getTime());
-		emailService.sendSimpleMessage(app.getEmail());
+		try {
+			app.getEmail().setContent(app.getEmail().getContent()+respOrder.getDeliveryTime().getTime());
+			emailService.sendSimpleMessage(app.getEmail());
+			respOrder.setEmailStatus("Email sent!");
+		}catch(Exception ex) {
+			respOrder.setEmailStatus("Verify email information!");
+		}
+		return respOrder;
 	}
 	
-	private void sendSms(DeliveryTime dt) {
+	private ResponseOrder sendSms(ResponseOrder respOrder) {
 
-		String result = smsService.sendSms("+18444085028746", "Nico Resto Challenge", "We already started to cooking your food!. Delivery Time: "+dt.getTime());
-		System.out.println("Sms Status = "+result);
+		respOrder.setSmsStatus(smsService.sendSms("+18444085028746", "Nico Resto Challenge", "We already started to cooking your food!. Delivery Time: "+respOrder.getDeliveryTime()));
+		return respOrder;
 	}
 }
