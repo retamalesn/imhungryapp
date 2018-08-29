@@ -1,7 +1,7 @@
 # iamhungry - Rest API for restaurants
 ## Description
 
-Iamhungry is a rest API created for an interview challenge.
+Iamhungry is a restaurant API created for an interview challenge.
 
 ### Available Endpoints
 
@@ -20,7 +20,7 @@ Iamhungry is a rest API created for an interview challenge.
 
   - Project checkout
   - Configure your credentials in the property file
-  - Run database script
+  - Run database script (imhungry.backup)
 
 ## Todos
 
