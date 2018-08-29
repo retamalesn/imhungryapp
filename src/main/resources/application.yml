@@ -1,0 +1,45 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/imhungrydb
+    username: postgres
+    password: "********"
+  mail:
+    default-encoding: UTF-8
+    host: smtp.gmail.com
+    username: youremail
+    password: "*******"
+    port: 587
+    protocol: smtp
+    test-connection: false
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        temp:
+          use_jdbc_metadata_defaults: false
+        format_sql: true
+    show-sql: true
+    hibernate:
+      ddl-auto: update  
+logging:
+  level:
+    org:
+      hibernate:
+        type: trace  
+server:
+  servlet:
+    contextPath: /imhungryapp
+app:
+  email:
+    from: youremail
+    to: youremail
+    subject: "Delivery Ready!!"
+    content: "We already started to cooking your food!. Delivery Time:"
+  googleApiKey: "************"
+  smsApiKey: "************" #https://txtlocal.co.uk

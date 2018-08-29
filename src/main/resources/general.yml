@@ -1,0 +1,6 @@
+app:
+  email:
+    from: restochallenge2018@gmail.com
+    to: retamalesn@gmail.com
+    subject: "Delivery Ready!!"
+    content: "We already started to cooking your food!. Delivery Time:" 
