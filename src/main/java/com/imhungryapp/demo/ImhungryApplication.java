@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 public class ImhungryApplication{
 	
 	public static void main(String[] args) {
-		SpringApplication.run(ImhungryApplication.class, args);
+		SpringApplication.run(ImhungryApplication.class, args);		
 	}
 
 }

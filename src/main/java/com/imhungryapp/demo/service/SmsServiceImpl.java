@@ -5,18 +5,27 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
+import org.apache.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import com.google.gson.Gson;
 import com.imhungryapp.demo.config.GeneralProperties;
+import com.imhungryapp.demo.dto.ResponseService;
+import com.imhungryapp.demo.util.Constants;
 
 @Service
 public class SmsServiceImpl implements SmsService {
 	
+	final static Logger logger = Logger.getLogger(SmsServiceImpl.class);
+	
 	@Autowired
 	private GeneralProperties app;
 
-	public String sendSms(String to, String senderMsg, String msg) {
+	public void sendSms(String to, String senderMsg, String msg) {
+		
+		ResponseService response = new ResponseService();
+		Gson gson = new Gson();
 		
 		try {
 			// Construct data
@@ -39,12 +48,13 @@ public class SmsServiceImpl implements SmsService {
 				stringBuffer.append(line);
 			}
 			rd.close();
-			
-			return stringBuffer.toString();
+			response.setStatus(Constants.SUCCESS);
+			response.setMessage(stringBuffer.toString());
+			logger.info("This is error : " + (gson.toJson(response)));
 		} catch (Exception e) {
-			System.out.println("Error SMS "+e);
-			return "Error "+e;
+			response.setStatus(Constants.FAIL);
+			response.setMessage(e.getMessage());
+			logger.error("This is error : " + (gson.toJson(response)));
 		}
 	}
-
 }

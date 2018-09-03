@@ -1,12 +1,9 @@
 package com.imhungryapp.demo.controller;
 
-import java.io.IOException;
 import java.util.List;
 
 import javax.validation.Valid;
 
-import org.joda.time.DateTime;
-import org.joda.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,22 +14,17 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.google.maps.model.DistanceMatrix;
-import com.google.maps.model.TrafficModel;
-import com.google.maps.model.TravelMode;
+import com.google.gson.Gson;
 import com.imhungryapp.demo.config.GeneralProperties;
-import com.imhungryapp.demo.dto.ResponseOrder;
+import com.imhungryapp.demo.dto.MapsDto;
+import com.imhungryapp.demo.dto.ResponseService;
+import com.imhungryapp.demo.dto.SmsDto;
 import com.imhungryapp.demo.exception.ResourceNotFoundException;
-import com.imhungryapp.demo.model.DeliveryTime;
-import com.imhungryapp.demo.model.DistanceMatrixItem;
-import com.imhungryapp.demo.model.DistanceMatrixResponse;
 import com.imhungryapp.demo.model.PurchaseOrder;
 import com.imhungryapp.demo.model.Restaurant;
 import com.imhungryapp.demo.repository.PurchaseOrderRepository;
 import com.imhungryapp.demo.repository.RestaurantRepository;
-import com.imhungryapp.demo.service.DistanceMatrixService;
-import com.imhungryapp.demo.service.EmailService;
-import com.imhungryapp.demo.service.SmsService;
+import com.imhungryapp.demo.service.KafkaProducerService;
 
 import io.swagger.annotations.Api;
 
@@ -46,13 +38,10 @@ public class PurchaseOrderController {
 	@Autowired
 	RestaurantRepository restRep;
 	@Autowired
-	private DistanceMatrixService distanceMatrixService;
-	@Autowired
-	private EmailService emailService;
-	@Autowired
-	private SmsService smsService;
-	@Autowired
 	private GeneralProperties app;
+	@Autowired
+	KafkaProducerService kafkaProducerService;
+	Gson gson = new Gson();
 
 	@RequestMapping(value = "/all", method = RequestMethod.GET)
 	public List<PurchaseOrder> getOrders() {
@@ -61,20 +50,19 @@ public class PurchaseOrderController {
 
 	@RequestMapping(value = "/add", method = RequestMethod.POST)
 	@ResponseBody
-	public ResponseOrder createOrder(@Valid @RequestBody PurchaseOrder order) {
+	public ResponseService createOrder(@Valid @RequestBody PurchaseOrder order) {
 		PurchaseOrder orderSaved = orderRep.save(order);
-		ResponseOrder respOrder = new ResponseOrder(new DeliveryTime());
+		ResponseService respService = new ResponseService();
 		restRep.findById(order.getRestaurantId()).map(restaurant -> {
-			
 			restaurant.getPurchaseOrders().add(orderSaved);
 			Restaurant restSaved = restRep.save(restaurant);
-			calculateTime(restSaved, orderSaved, respOrder);
-			sendEmail(respOrder);
-			sendSms(respOrder);
-			return respOrder;
+			calculateTime(restSaved, orderSaved, respService);
+			sendEmail();
+			sendSms();
+			return respService;
 		}).orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id " + order.getRestaurantId()));
 
-		return respOrder;
+		return respService;
 	}
 
 	@DeleteMapping("/delete/{id}")
@@ -85,44 +73,26 @@ public class PurchaseOrderController {
 		}).orElseThrow(() -> new ResourceNotFoundException("Order not found with id " + id));
 	}
 
-	private ResponseOrder calculateTime(Restaurant res, PurchaseOrder order, ResponseOrder respOrder) {
-		String result = "";
-		String[] origins = new String[] { res.getLocation() };
-		String[] destinations = new String[] { order.getLatLng() };
-		try {
-			DistanceMatrix distanceMatrix = distanceMatrixService.getDitanceMatrix(origins, destinations,
-					TravelMode.DRIVING, "en", "", "", new DateTime().plus(Duration.standardMinutes(2)),
-					TrafficModel.PESSIMISTIC);
-			DistanceMatrixResponse response = new DistanceMatrixResponse(distanceMatrix);
-			for (DistanceMatrixItem di : response.getDistanceMatrixItems()) {
-				respOrder.getDeliveryTime().setTime(di.getDistanceMatrixElement().getDurationInTraffic().getHumanReadable());
-			}
-			respOrder.getDeliveryTime().setStatus("Delivery time calculated");
-		} catch (IOException e) {
-			respOrder.getDeliveryTime().setStatus("Wrong API KEY");
-			respOrder.getDeliveryTime().setTime("Time couldn't calculated!");
-		} catch (Exception e) {
-			respOrder.getDeliveryTime().setStatus("Wrong API KEY");
-			respOrder.getDeliveryTime().setTime("Time couldn't calculated!");
-		}
-		return respOrder;
+	private void calculateTime(Restaurant res, PurchaseOrder order, ResponseService respOrder) {
+		MapsDto mapsDTO = new MapsDto();
+		mapsDTO.setOrigins(new String[] { res.getLocation() });
+		mapsDTO.setDestinations(new String[] { order.getLatLng() });
+		kafkaProducerService.sendMessage("maps", gson.toJson(mapsDTO));
+
+		//return distanceMatrixService.getDeliveryTime(origins, destinations);
+			
 	}
 
-	private ResponseOrder sendEmail(ResponseOrder respOrder) {
+	private void sendEmail() {
 
-		try {
-			app.getEmail().setContent(app.getEmail().getContent()+respOrder.getDeliveryTime().getTime());
-			emailService.sendSimpleMessage(app.getEmail());
-			respOrder.setEmailStatus("Email sent!");
-		}catch(Exception ex) {
-			respOrder.setEmailStatus("Verify email information!");
-		}
-		return respOrder;
+		kafkaProducerService.sendMessage("email", gson.toJson(app.getEmail()));
 	}
 	
-	private ResponseOrder sendSms(ResponseOrder respOrder) {
-
-		respOrder.setSmsStatus(smsService.sendSms("+18444085028746", "Nico Resto Challenge", "We already started to cooking your food!. Delivery Time: "+respOrder.getDeliveryTime()));
-		return respOrder;
+	private void sendSms() {
+		SmsDto smsDto = new SmsDto();
+		smsDto.setNumber("+18444085028746");
+		smsDto.setSender("Nico Resto Challenge");
+		smsDto.setMsg("We already started to cooking your food!. Delivery Time: ");
+		kafkaProducerService.sendMessage("sms", gson.toJson(smsDto));
 	}
 }

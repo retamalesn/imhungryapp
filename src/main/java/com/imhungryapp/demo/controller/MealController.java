@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.imhungryapp.demo.model.Meal;
 import com.imhungryapp.demo.repository.MealRepository;
+import com.imhungryapp.demo.service.KafkaProducerService;
 
 import io.swagger.annotations.Api;
 
