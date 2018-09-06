@@ -1,7 +1,5 @@
 package com.imhungryapp.demo.dto;
 
-import com.imhungryapp.demo.model.DeliveryTime;
-
 public class ResponseOrder {
 
 	private DeliveryTime deliveryTime;

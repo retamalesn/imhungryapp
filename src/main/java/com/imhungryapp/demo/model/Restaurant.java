@@ -25,17 +25,34 @@ public class Restaurant  implements Serializable{
 	private static final long serialVersionUID = 1L;
 	@Id
 	@GeneratedValue
-	@ApiModelProperty(notes = "The database generated product ID")
+	@ApiModelProperty( value = "The standard id attribute - System generated", required = false)
 	private int id;
 	private String logo;
+	@ApiModelProperty(required = true)
 	private String legalName;
 	@ApiModelProperty(notes = "The app generated rating")
 	private Float rating;
+	@ApiModelProperty(required = true)
 	private String comercialEmail;
+	@ApiModelProperty(required = true)
 	private String adminNumber;
+	@ApiModelProperty(required = true)
 	private String address;
-	@ApiModelProperty(notes = "The database generated product ID", required=true)
+	@ApiModelProperty(required = true)
 	private String location;
+    @ManyToMany(fetch=FetchType.EAGER)
+    @ApiModelProperty(required = false, hidden=true)
+    @JoinTable(name = "restaurant_meals", joinColumns = { @JoinColumn(name = "rest_id") }, inverseJoinColumns = {
+			@JoinColumn(name = "meal_id") })
+    private Set<Meal> meals = new HashSet<>();
+	@OneToMany (fetch=FetchType.EAGER, orphanRemoval = true)
+	@JoinColumn(name = "rest_id")
+	@ApiModelProperty(required = false, hidden=true)
+	private Set<Review> reviews = new HashSet<>();
+	@OneToMany (fetch=FetchType.EAGER, orphanRemoval = true)
+	@JoinColumn(name = "rest_id")
+	@ApiModelProperty(required = false, hidden=true)
+	private Set<PurchaseOrder> purchaseOrders = new HashSet<>();
 	
 	public Restaurant() {
 
@@ -62,22 +79,7 @@ public class Restaurant  implements Serializable{
         this.address = address;
         this.location = location;
         this.meals = meals;
-    }
-
-    @ManyToMany(fetch=FetchType.EAGER)
-    @JoinTable(name = "restaurant_meals", joinColumns = { @JoinColumn(name = "rest_id") }, inverseJoinColumns = {
-			@JoinColumn(name = "meal_id") })
-    private Set<Meal> meals = new HashSet<>();
-
-    
-	@OneToMany (fetch=FetchType.EAGER, orphanRemoval = true)
-	@JoinColumn(name = "rest_id")
-	private Set<Review> reviews = new HashSet<>();
-
-	@OneToMany (fetch=FetchType.EAGER, orphanRemoval = true)
-	@JoinColumn(name = "rest_id")
-	private Set<PurchaseOrder> purchaseOrders = new HashSet<>();
-	
+    }	
 
 	public int getId() {
 		return id;

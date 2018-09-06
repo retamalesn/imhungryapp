@@ -1,4 +1,4 @@
-package com.imhungryapp.demo.model;
+package com.imhungryapp.demo.dto;
 
 import org.springframework.boot.web.server.WebServerFactoryCustomizer;
 import org.springframework.boot.web.servlet.server.ConfigurableServletWebServerFactory;

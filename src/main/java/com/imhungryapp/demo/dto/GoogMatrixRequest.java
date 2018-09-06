@@ -1,4 +1,4 @@
-package com.imhungryapp.demo.model;
+package com.imhungryapp.demo.dto;
 
 import com.squareup.okhttp.OkHttpClient;
 import com.squareup.okhttp.Request;

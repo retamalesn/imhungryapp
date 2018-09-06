@@ -1,4 +1,4 @@
-package com.imhungryapp.demo.model;
+package com.imhungryapp.demo.dto;
 
 /**
  * This class is for populating a single response from the Google Distance Matrix API

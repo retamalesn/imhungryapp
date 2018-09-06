@@ -3,7 +3,7 @@ package com.imhungryapp.demo.config;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
-import com.imhungryapp.demo.model.Email;
+import com.imhungryapp.demo.dto.Email;
 
 @Component
 @ConfigurationProperties("app")
