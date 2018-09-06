@@ -49,9 +49,13 @@ public class RestaurantController {
 		if(restaurant.getRating() == null) {
 			restaurant.setRating(new Float(0.0));
 		}
-		Restaurant restSaved = rr.save(restaurant);
-		calulateRating(restSaved);
-		return rr.save(restSaved);
+		return rr.save(restaurant);
+	}
+	
+	@ApiOperation(value = "Update a Restaurant", response = Restaurant.class)
+	@RequestMapping(value = "/update", method = RequestMethod.POST)
+	public Restaurant updateRestaurant(@Valid @RequestBody Restaurant restaurant) {
+		return rr.save(restaurant);
 	}
 	
 	@ApiOperation(value = "Delete a Restaurant", response = ResponseEntity.class)
@@ -62,15 +66,4 @@ public class RestaurantController {
 			return ResponseEntity.ok().build();
 		}).orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id " + id));
 	}
-	
-	
-
-	private void calulateRating(Restaurant restaurant) {
-		Float reviewSum = 0F;
-		for (Review review : restaurant.getReviews()) {
-			reviewSum += review.getRating() != null ? review.getRating() : 0F;
-		}
-		restaurant.setRating(reviewSum / restaurant.getReviews().size());
-	}
-
 }

@@ -2,9 +2,12 @@ package com.imhungryapp.demo.controller;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Optional;
 
 import javax.validation.Valid;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.joda.time.DateTime;
 import org.joda.time.Duration;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,13 +24,15 @@ import com.google.maps.model.DistanceMatrix;
 import com.google.maps.model.TrafficModel;
 import com.google.maps.model.TravelMode;
 import com.imhungryapp.demo.config.GeneralProperties;
+import com.imhungryapp.demo.dto.DeliveryTime;
+import com.imhungryapp.demo.dto.DistanceMatrixItem;
+import com.imhungryapp.demo.dto.DistanceMatrixResponse;
 import com.imhungryapp.demo.dto.ResponseOrder;
 import com.imhungryapp.demo.exception.ResourceNotFoundException;
-import com.imhungryapp.demo.model.DeliveryTime;
-import com.imhungryapp.demo.model.DistanceMatrixItem;
-import com.imhungryapp.demo.model.DistanceMatrixResponse;
+import com.imhungryapp.demo.model.Customer;
 import com.imhungryapp.demo.model.PurchaseOrder;
 import com.imhungryapp.demo.model.Restaurant;
+import com.imhungryapp.demo.repository.CustomerRepository;
 import com.imhungryapp.demo.repository.PurchaseOrderRepository;
 import com.imhungryapp.demo.repository.RestaurantRepository;
 import com.imhungryapp.demo.service.DistanceMatrixService;
@@ -40,11 +45,15 @@ import io.swagger.annotations.Api;
 @RequestMapping("/purchaseorder")
 @Api(value="restaurant", description="Operations pertaining to purchase orders")
 public class PurchaseOrderController {
+	
+	private static final Logger LOGGER = LogManager.getLogger(PurchaseOrderController.class);
 
 	@Autowired
 	PurchaseOrderRepository orderRep;
 	@Autowired
 	RestaurantRepository restRep;
+	@Autowired
+	CustomerRepository custRep;
 	@Autowired
 	private DistanceMatrixService distanceMatrixService;
 	@Autowired
@@ -64,18 +73,40 @@ public class PurchaseOrderController {
 	public ResponseOrder createOrder(@Valid @RequestBody PurchaseOrder order) {
 		PurchaseOrder orderSaved = orderRep.save(order);
 		ResponseOrder respOrder = new ResponseOrder(new DeliveryTime());
-		restRep.findById(order.getRestaurantId()).map(restaurant -> {
-			
-			restaurant.getPurchaseOrders().add(orderSaved);
-			Restaurant restSaved = restRep.save(restaurant);
-			calculateTime(restSaved, orderSaved, respOrder);
-			sendEmail(respOrder);
-			sendSms(respOrder);
-			return respOrder;
-		}).orElseThrow(() -> new ResourceNotFoundException("Restaurant not found with id " + order.getRestaurantId()));
+		Restaurant restSaved = null;
+		Customer custSaved = null;
+		Optional<Restaurant> restOptional = restRep.findById(order.getRestaurantId());
+		if (restOptional.isPresent()){
+			restOptional.get().getPurchaseOrders().add(orderSaved);
+			restSaved = new Restaurant();
+			restSaved = restRep.save(restOptional.get());
+		}
+		else{
+			LOGGER.warn("Restaurant could not find");
+		}
+		Optional<Customer> custOptional = custRep.findById(order.getCustomerId());
+		if (custOptional.isPresent()){
+			custOptional.get().getOrders().add(orderSaved);
+			custSaved  = new Customer();
+			custSaved = custRep.save(custOptional.get());
+		}
+		else{
+			LOGGER.warn("Customer could not find");
+		}
 
+		if(restSaved != null && custSaved != null) {
+			calculateTime(restSaved, orderSaved, respOrder);
+			sendEmail(respOrder, custSaved);
+			sendSms(respOrder, custSaved);
+		}
+		
 		return respOrder;
 	}
+	
+	@RequestMapping(value="/update", method=RequestMethod.PUT)
+    public PurchaseOrder updateOrder(@Valid @RequestBody PurchaseOrder order) {
+        return orderRep.save(order);
+    }
 
 	@DeleteMapping("/delete/{id}")
 	public ResponseEntity<?> deleteOrder(@PathVariable int id) {
@@ -86,7 +117,6 @@ public class PurchaseOrderController {
 	}
 
 	private ResponseOrder calculateTime(Restaurant res, PurchaseOrder order, ResponseOrder respOrder) {
-		String result = "";
 		String[] origins = new String[] { res.getLocation() };
 		String[] destinations = new String[] { order.getLatLng() };
 		try {
@@ -108,11 +138,11 @@ public class PurchaseOrderController {
 		return respOrder;
 	}
 
-	private ResponseOrder sendEmail(ResponseOrder respOrder) {
+	private ResponseOrder sendEmail(ResponseOrder respOrder, Customer customer) {
 
 		try {
 			app.getEmail().setContent(app.getEmail().getContent()+respOrder.getDeliveryTime().getTime());
-			emailService.sendSimpleMessage(app.getEmail());
+			emailService.sendSimpleMessage(app.getEmail(), customer.getEmail());
 			respOrder.setEmailStatus("Email sent!");
 		}catch(Exception ex) {
 			respOrder.setEmailStatus("Verify email information!");
@@ -120,9 +150,9 @@ public class PurchaseOrderController {
 		return respOrder;
 	}
 	
-	private ResponseOrder sendSms(ResponseOrder respOrder) {
+	private ResponseOrder sendSms(ResponseOrder respOrder, Customer customer) {
 
-		respOrder.setSmsStatus(smsService.sendSms("+18444085028746", "Nico Resto Challenge", "We already started to cooking your food!. Delivery Time: "+respOrder.getDeliveryTime()));
+		respOrder.setSmsStatus(smsService.sendSms(customer.getPhoneNumber(), "Nico Resto Challenge", "We already started to cooking your food!. Delivery Time: "+respOrder.getDeliveryTime()));
 		return respOrder;
 	}
 }

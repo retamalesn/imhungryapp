@@ -13,6 +13,8 @@ import javax.persistence.JoinColumn;
 import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 
+import io.swagger.annotations.ApiModelProperty;
+
 @Entity
 public class PurchaseOrder implements Serializable{
 	
@@ -22,12 +24,15 @@ public class PurchaseOrder implements Serializable{
 	private static final long serialVersionUID = 1L;
 	@Id
 	@GeneratedValue
+	@ApiModelProperty( value = "The standard id attribute - System generated", required = false)
 	private int id;
 	private Float totalCost;
 	private String address;
 	private String latLng;
 	@Column(name="rest_id")
 	private int restaurantId;
+	@Column(name="customer_id")
+	private long customerId;
 	@ManyToMany(fetch = FetchType.EAGER)
 	@JoinTable(name = "orderpurchase_meals", joinColumns = { @JoinColumn(name = "orderpurchase_id") }, inverseJoinColumns = {
 			@JoinColumn(name = "meal_id") })
@@ -78,6 +83,15 @@ public class PurchaseOrder implements Serializable{
 	}
 	public void setRestaurantId(int restaurantId) {
 		this.restaurantId = restaurantId;
+	}
+	public long getCustomerId() {
+		return customerId;
+	}
+	public void setCustomerId(long customerId) {
+		this.customerId = customerId;
+	}
+	public static long getSerialversionuid() {
+		return serialVersionUID;
 	}
 	
 	
