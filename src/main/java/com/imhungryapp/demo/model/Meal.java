@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
@@ -26,6 +27,8 @@ public class Meal  implements Serializable{
 	private String name;
 	private String description;
 	private Float price;
+	@Column(name="restaurant_id")
+	private int restaurantId;
 	
 	public Meal() {
 
@@ -87,5 +90,18 @@ public class Meal  implements Serializable{
 	}
 	public void setPurchaseOrders(Set<PurchaseOrder> purchaseOrders) {
 		this.purchaseOrders = purchaseOrders;
-	}	
+	}
+
+	public int getRestaurantId() {
+		return restaurantId;
+	}
+
+	public void setRestaurantId(int restaurantId) {
+		this.restaurantId = restaurantId;
+	}
+
+	public static long getSerialversionuid() {
+		return serialVersionUID;
+	}
+	
 }

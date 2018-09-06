@@ -1,4 +1,4 @@
-package com.imhungryapp.demo.model;
+package com.imhungryapp.demo.dto;
 
 import java.util.ArrayList;
 import java.util.HashSet;

@@ -12,9 +12,6 @@ import javax.persistence.Table;
 @Table(name = "REVIEW")
 public class Review  implements Serializable{
 
-	/**
-	 * 
-	 */
 	private static final long serialVersionUID = 1L;
 	@Id
 	@GeneratedValue
@@ -23,6 +20,8 @@ public class Review  implements Serializable{
 	private String review;
 	@Column(nullable=false)
 	private Float rating;
+	@Column(name="rest_id")
+	private int restaurantId;
 	
 	public Review() {
 
@@ -59,5 +58,18 @@ public class Review  implements Serializable{
 	public void setRating(Float rating) {
 		this.rating = rating;
 	}
+
+	public int getRestaurantId() {
+		return restaurantId;
+	}
+
+	public void setRestaurantId(int restaurantId) {
+		this.restaurantId = restaurantId;
+	}
+
+	public static long getSerialversionuid() {
+		return serialVersionUID;
+	}
+	
 
 }
