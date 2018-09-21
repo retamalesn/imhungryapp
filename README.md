@@ -20,7 +20,9 @@ Iamhungry is a restaurant API created for an interview challenge.
 
   - Project checkout
   - Configure your credentials in the property file
-  - [Run database script] (https://github.com/retamalesn/imhungryapp/blob/master/src/main/resources/dbscript/imhungry.backup)
+  
+### Files
+  See [imhungry.backup](https://github.com/retamalesn/imhungryapp/blob/master/src/main/resources/dbscript/imhungry.backup)
 
 ## Todos
 
