@@ -1,4 +1,7 @@
 # iamhungry - Rest API for restaurants
+
+![header](https://pixabay.com/get/e835b3062af1033ed1534705fb094796e270e0dd1eb20c4090f3c67ca3e9b4bed8/bike-1029252_1920.jpg)
+
 ## Description
 
 Iamhungry is a restaurant API created for an interview challenge.
